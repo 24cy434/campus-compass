@@ -14,7 +14,220 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      category_faculty: {
+        Row: {
+          category_id: string
+          faculty_id: string
+          id: string
+        }
+        Insert: {
+          category_id: string
+          faculty_id: string
+          id?: string
+        }
+        Update: {
+          category_id?: string
+          faculty_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_faculty_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          assigned_to: string | null
+          category_id: string
+          created_at: string
+          description: string
+          id: string
+          status: string
+          title: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category_id: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          title: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: string
+          title?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          complaint_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          user_id: string
+        }
+        Insert: {
+          complaint_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          user_id: string
+        }
+        Update: {
+          complaint_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          approval_status: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: string
+        }
+        Insert: {
+          approval_status?: string
+          created_at?: string
+          email?: string
+          id: string
+          name?: string
+          role?: string
+        }
+        Update: {
+          approval_status?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      status_log: {
+        Row: {
+          action_type: string
+          complaint_id: string
+          id: string
+          performed_by: string
+          timestamp: string
+        }
+        Insert: {
+          action_type: string
+          complaint_id: string
+          id?: string
+          performed_by: string
+          timestamp?: string
+        }
+        Update: {
+          action_type?: string
+          complaint_id?: string
+          id?: string
+          performed_by?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_log_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          complaint_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          complaint_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          complaint_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
