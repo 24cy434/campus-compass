@@ -171,7 +171,7 @@ const LoginPage = () => {
                 <p className="text-sm text-destructive bg-destructive/5 rounded-md px-3 py-2">{error}</p>
               )}
               {success && (
-                <p className="text-sm text-status-done bg-green-50 rounded-md px-3 py-2">{success}</p>
+                <p className="text-sm text-status-done bg-muted rounded-md px-3 py-2">{success}</p>
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>
