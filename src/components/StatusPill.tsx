@@ -9,7 +9,7 @@ const statusStyles: Record<string, string> = {
 };
 
 interface StatusPillProps {
-  status: ComplaintStatus;
+  status: string;
 }
 
 export const StatusPill = ({ status }: StatusPillProps) => (
