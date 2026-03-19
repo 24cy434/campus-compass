@@ -21,6 +21,10 @@ const ComplaintDetail = () => {
   const [userVoted, setUserVoted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newStatus, setNewStatus] = useState('');
+  const [faculty, setFaculty] = useState<UserType[]>([]);
+  const [assignedTo, setAssignedTo] = useState('');
+  const [assignedName, setAssignedName] = useState('');
+  const [submitterName, setSubmitterName] = useState('');
 
   useEffect(() => {
     if (id) fetchComplaint();
