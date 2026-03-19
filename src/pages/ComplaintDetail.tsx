@@ -20,7 +20,7 @@ const ComplaintDetail = () => {
   const [voteCount, setVoteCount] = useState(0);
   const [userVoted, setUserVoted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [newStatus, setNewStatus] = useState<ComplaintStatus | ''>('');
+  const [newStatus, setNewStatus] = useState('');
 
   useEffect(() => {
     if (id) fetchComplaint();
