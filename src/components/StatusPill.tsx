@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import type { ComplaintStatus } from '@/types';
 
-const statusStyles: Record<ComplaintStatus, string> = {
+const statusStyles: Record<string, string> = {
   pending: 'status-pending',
   processing: 'status-processing',
   done: 'status-done',
