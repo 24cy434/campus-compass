@@ -31,7 +31,7 @@ const LoginPage = () => {
 
     try {
       if (roleTab === 'admin') {
-        const result = await adminLogin(adminUsername, password);
+        const result = await adminLogin(adminEmail, password);
         if (result.error) { setError(result.error); return; }
         navigate('/');
         return;
@@ -43,6 +43,10 @@ const LoginPage = () => {
         navigate('/');
       } else {
         if (!name.trim()) { setError('Name is required'); return; }
+        if (!email.endsWith('@mgits.ac.in')) {
+          setError('Please use your college email (e.g. 24cy434@mgits.ac.in)');
+          return;
+        }
         const result = await signUp(email, password, name, roleTab as UserRole);
         if (result.error) { setError(result.error); return; }
         if (roleTab === 'faculty') {
