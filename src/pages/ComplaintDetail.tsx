@@ -5,8 +5,8 @@ import { supabase } from '@/lib/supabase';
 import { StatusPill } from '@/components/StatusPill';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Complaint, ComplaintStatus, StatusLog } from '@/types';
-import { ArrowLeft, ChevronUp, Clock, User } from 'lucide-react';
+import type { Complaint, ComplaintStatus, StatusLog, User as UserType } from '@/types';
+import { ArrowLeft, ChevronUp, Clock, User, UserCheck } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -21,6 +21,10 @@ const ComplaintDetail = () => {
   const [userVoted, setUserVoted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newStatus, setNewStatus] = useState('');
+  const [faculty, setFaculty] = useState<UserType[]>([]);
+  const [assignedTo, setAssignedTo] = useState('');
+  const [assignedName, setAssignedName] = useState('');
+  const [submitterName, setSubmitterName] = useState('');
 
   useEffect(() => {
     if (id) fetchComplaint();
@@ -39,6 +43,21 @@ const ComplaintDetail = () => {
     if (data) {
       setComplaint(data);
       setNewStatus(data.status);
+      setAssignedTo(data.assigned_to || '');
+
+      // Fetch submitter name
+      const { data: submitter } = await supabase.from('profiles').select('name').eq('id', data.user_id).maybeSingle();
+      setSubmitterName(submitter?.name || '');
+
+      // Fetch assigned faculty name
+      if (data.assigned_to) {
+        const { data: assignee } = await supabase.from('profiles').select('name').eq('id', data.assigned_to).maybeSingle();
+        setAssignedName(assignee?.name || '');
+      }
+
+      // Fetch all approved faculty for reassignment
+      const { data: fac } = await supabase.from('profiles').select('*').eq('role', 'faculty').eq('approval_status', 'approved');
+      setFaculty(fac || []);
 
       const { count } = await supabase.from('votes').select('*', { count: 'exact', head: true }).eq('complaint_id', id);
       setVoteCount(count || 0);
@@ -137,11 +156,51 @@ const ComplaintDetail = () => {
 
         <p className="text-body text-foreground whitespace-pre-wrap">{complaint.description}</p>
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border flex-wrap">
           <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(new Date(complaint.created_at), 'PPp')}</span>
-          <span className="flex items-center gap-1"><User className="h-3 w-3" /> ID: {complaint.id.slice(0, 8)}</span>
+          <span className="flex items-center gap-1"><User className="h-3 w-3" /> By: {submitterName || complaint.user_id.slice(0, 8)}</span>
+          {assignedName && (
+            <span className="flex items-center gap-1"><UserCheck className="h-3 w-3" /> Assigned: {assignedName}</span>
+          )}
         </div>
       </motion.div>
+
+      {/* Reassign faculty — admin only */}
+      {user?.role === 'admin' && (
+        <div className="card-shadow rounded-lg bg-card p-4">
+          <h2 className="text-display text-foreground mb-3">Assign / Reassign Faculty</h2>
+          <div className="flex gap-3">
+            <Select value={assignedTo} onValueChange={setAssignedTo}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Select faculty..." />
+              </SelectTrigger>
+              <SelectContent>
+                {faculty.map(f => (
+                  <SelectItem key={f.id} value={f.id}>{f.name} ({f.email})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={async () => {
+              if (!assignedTo || !complaint) return;
+              await supabase.from('complaints').update({ assigned_to: assignedTo }).eq('id', complaint.id);
+              await supabase.from('status_log').insert({
+                complaint_id: complaint.id,
+                action_type: `Reassigned to ${faculty.find(f => f.id === assignedTo)?.name || 'faculty'}`,
+                performed_by: user!.id,
+              });
+              await supabase.from('notifications').insert({
+                user_id: assignedTo,
+                complaint_id: complaint.id,
+                message: `You have been assigned to: "${complaint.title}"`,
+              });
+              toast.success('Faculty assignment updated');
+              fetchComplaint();
+            }} disabled={assignedTo === complaint.assigned_to}>
+              Assign
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Status change for faculty/admin */}
       {canChangeStatus && (
