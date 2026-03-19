@@ -110,12 +110,13 @@ const LoginPage = () => {
               {roleTab === 'admin' ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="admin-user" className="text-body">Username</Label>
+                    <Label htmlFor="admin-email" className="text-body">Admin Email</Label>
                     <Input
-                      id="admin-user"
-                      value={adminUsername}
-                      onChange={e => setAdminUsername(e.target.value)}
-                      placeholder="ADMIN@1234"
+                      id="admin-email"
+                      type="email"
+                      value={adminEmail}
+                      onChange={e => setAdminEmail(e.target.value)}
+                      placeholder="admin@example.com"
                       required
                     />
                   </div>
