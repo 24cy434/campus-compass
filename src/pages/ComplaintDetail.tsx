@@ -43,6 +43,21 @@ const ComplaintDetail = () => {
     if (data) {
       setComplaint(data);
       setNewStatus(data.status);
+      setAssignedTo(data.assigned_to || '');
+
+      // Fetch submitter name
+      const { data: submitter } = await supabase.from('profiles').select('name').eq('id', data.user_id).maybeSingle();
+      setSubmitterName(submitter?.name || '');
+
+      // Fetch assigned faculty name
+      if (data.assigned_to) {
+        const { data: assignee } = await supabase.from('profiles').select('name').eq('id', data.assigned_to).maybeSingle();
+        setAssignedName(assignee?.name || '');
+      }
+
+      // Fetch all approved faculty for reassignment
+      const { data: fac } = await supabase.from('profiles').select('*').eq('role', 'faculty').eq('approval_status', 'approved');
+      setFaculty(fac || []);
 
       const { count } = await supabase.from('votes').select('*', { count: 'exact', head: true }).eq('complaint_id', id);
       setVoteCount(count || 0);
