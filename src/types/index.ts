@@ -7,16 +7,16 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
-  approval_status: ApprovalStatus;
+  role: string;
+  approval_status: string;
   created_at: string;
 }
 
 export interface Category {
   id: string;
   name: string;
-  description: string;
-  created_by: string;
+  description: string | null;
+  created_by: string | null;
 }
 
 export interface Complaint {
@@ -25,8 +25,8 @@ export interface Complaint {
   category_id: string;
   title: string;
   description: string;
-  visibility: Visibility;
-  status: ComplaintStatus;
+  visibility: string;
+  status: string;
   assigned_to: string | null;
   created_at: string;
   // joined
@@ -54,7 +54,7 @@ export interface StatusLog {
 export interface Notification {
   id: string;
   user_id: string;
-  complaint_id: string;
+  complaint_id: string | null;
   message: string;
   is_read: boolean;
   created_at: string;
