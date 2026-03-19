@@ -2,13 +2,15 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User, UserRole } from '@/types';
 
+const ADMIN_EMAILS = ['asharaj@mgits.ac.in', 'adhithyakrishna00001@gmail.com'];
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, name: string, role: UserRole) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
-  adminLogin: (username: string, password: string) => Promise<{ error?: string }>;
+  adminLogin: (email: string, password: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,29 +86,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const adminLogin = async (username: string, password: string) => {
-    if (username === 'ADMIN@1234' && password === 'Admin@1234') {
-      // Admin uses a special supabase account
-      const { error } = await supabase.auth.signInWithPassword({
-        email: 'admin@rbcms.system',
-        password: 'Admin@1234',
-      });
-      if (error) {
-        // Create admin account if it doesn't exist
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: 'admin@rbcms.system',
-          password: 'Admin@1234',
-        });
-        if (signUpError) return { error: signUpError.message };
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-          email: 'admin@rbcms.system',
-          password: 'Admin@1234',
-        });
-        if (loginError) return { error: loginError.message };
-      }
-      return {};
+  const adminLogin = async (email: string, password: string) => {
+    if (!ADMIN_EMAILS.includes(email.toLowerCase())) {
+      return { error: 'This email is not authorized as admin' };
     }
-    return { error: 'Invalid admin credentials' };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      // Auto-register admin if first time
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name: 'Admin', role: 'admin' } },
+      });
+      if (signUpError) return { error: signUpError.message };
+      // Try login again after signup (auto-confirm is enabled)
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      if (loginError) return { error: loginError.message };
+    }
+    return {};
   };
 
   return (

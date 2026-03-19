@@ -18,7 +18,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [adminUsername, setAdminUsername] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -31,7 +31,7 @@ const LoginPage = () => {
 
     try {
       if (roleTab === 'admin') {
-        const result = await adminLogin(adminUsername, password);
+        const result = await adminLogin(adminEmail, password);
         if (result.error) { setError(result.error); return; }
         navigate('/');
         return;
@@ -43,6 +43,10 @@ const LoginPage = () => {
         navigate('/');
       } else {
         if (!name.trim()) { setError('Name is required'); return; }
+        if (!email.endsWith('@mgits.ac.in')) {
+          setError('Please use your college email (e.g. 24cy434@mgits.ac.in)');
+          return;
+        }
         const result = await signUp(email, password, name, roleTab as UserRole);
         if (result.error) { setError(result.error); return; }
         if (roleTab === 'faculty') {
@@ -106,12 +110,13 @@ const LoginPage = () => {
               {roleTab === 'admin' ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="admin-user" className="text-body">Username</Label>
+                    <Label htmlFor="admin-email" className="text-body">Admin Email</Label>
                     <Input
-                      id="admin-user"
-                      value={adminUsername}
-                      onChange={e => setAdminUsername(e.target.value)}
-                      placeholder="ADMIN@1234"
+                      id="admin-email"
+                      type="email"
+                      value={adminEmail}
+                      onChange={e => setAdminEmail(e.target.value)}
+                      placeholder="admin@example.com"
                       required
                     />
                   </div>
