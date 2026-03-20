@@ -90,18 +90,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!ADMIN_EMAILS.includes(email.toLowerCase())) {
       return { error: 'This email is not authorized as admin' };
     }
+    // Try sign in first
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // Auto-register admin if first time
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name: 'Admin', role: 'admin' } },
-      });
-      if (signUpError) return { error: signUpError.message };
-      // Try login again after signup (auto-confirm is enabled)
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (loginError) return { error: loginError.message };
+      // If invalid credentials, try to create the admin account
+      if (error.message.includes('Invalid login credentials')) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name: 'Admin', role: 'admin' } },
+        });
+        if (signUpError) {
+          // "User already registered" means password is wrong
+          if (signUpError.message.includes('already registered')) {
+            return { error: 'Invalid password for this admin account' };
+          }
+          return { error: signUpError.message };
+        }
+        // Ensure profile exists
+        if (signUpData.user) {
+          await supabase.from('profiles').upsert({
+            id: signUpData.user.id,
+            name: 'Admin',
+            email: email.toLowerCase(),
+            role: 'admin',
+            approval_status: 'approved',
+          });
+        }
+        // Login after signup
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        if (loginError) return { error: loginError.message };
+      } else {
+        return { error: error.message };
+      }
     }
     return {};
   };

@@ -2,8 +2,17 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ComplaintCard } from '@/components/ComplaintCard';
+import { PageWrapper } from '@/components/PageWrapper';
+import { CardSkeleton } from '@/components/LoadingSkeleton';
 import type { Complaint } from '@/types';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
+};
+const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
 
 const AssignedComplaints = () => {
   const { user } = useAuth();
@@ -31,22 +40,22 @@ const AssignedComplaints = () => {
   };
 
   return (
-    <div className="container py-6 space-y-6">
-      <h1 className="text-2xl font-semibold text-foreground tracking-tight">Assigned to Me</h1>
+    <PageWrapper className="container py-6 space-y-6">
+      <motion.h1 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-2xl font-semibold text-foreground tracking-tight">Assigned to Me</motion.h1>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <div key={i} className="card-shadow rounded-lg bg-card p-4 h-40 animate-pulse" />)}
-        </div>
+        <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={container} initial="hidden" animate="show">
+          {Array.from({ length: 3 }).map((_, i) => <motion.div key={i} variants={item}><CardSkeleton /></motion.div>)}
+        </motion.div>
       ) : complaints.length === 0 ? (
-        <div className="card-shadow rounded-lg bg-card p-8 text-center">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card-shadow rounded-lg bg-card p-8 text-center">
           <p className="text-muted-foreground text-body">No assigned complaints.</p>
-        </div>
+        </motion.div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {complaints.map(c => <ComplaintCard key={c.id} complaint={c} showVotes={false} />)}
-          </div>
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={container} initial="hidden" animate="show">
+            {complaints.map(c => <motion.div key={c.id} variants={item}><ComplaintCard complaint={c} showVotes={false} /></motion.div>)}
+          </motion.div>
           <div className="flex justify-center gap-2 pt-4">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
             <span className="text-body text-muted-foreground self-center tabular-nums">Page {page + 1}</span>
@@ -54,7 +63,7 @@ const AssignedComplaints = () => {
           </div>
         </>
       )}
-    </div>
+    </PageWrapper>
   );
 };
 

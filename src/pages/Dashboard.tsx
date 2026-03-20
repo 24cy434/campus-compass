@@ -2,9 +2,20 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ComplaintCard } from '@/components/ComplaintCard';
+import { PageWrapper } from '@/components/PageWrapper';
+import { StatSkeleton, CardSkeleton } from '@/components/LoadingSkeleton';
 import type { Complaint } from '@/types';
 import { FileText, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0 },
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -21,7 +32,6 @@ const Dashboard = () => {
     if (!user) return;
     setLoading(true);
 
-    // Fetch recent public complaints
     const { data: publicComplaints } = await supabase
       .from('complaints')
       .select('*, category:categories(*)')
@@ -29,7 +39,6 @@ const Dashboard = () => {
       .order('created_at', { ascending: false })
       .limit(6);
 
-    // Fetch vote counts
     if (publicComplaints) {
       const withVotes = await Promise.all(
         publicComplaints.map(async (c) => {
@@ -49,7 +58,6 @@ const Dashboard = () => {
       setComplaints(withVotes);
     }
 
-    // Fetch stats based on role
     let query = supabase.from('complaints').select('status');
     if (user.role === 'student') {
       query = query.eq('user_id', user.id);
@@ -89,61 +97,70 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="container py-6 space-y-6">
-      <div>
+    <PageWrapper className="container py-6 space-y-6">
+      <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
         <h1 className="text-2xl font-semibold text-foreground tracking-tight">
           {user?.role === 'admin' ? 'Admin Dashboard' : user?.role === 'faculty' ? 'Faculty Dashboard' : 'Dashboard'}
         </h1>
         <p className="text-body text-muted-foreground mt-1">
           Welcome back, {user?.name || 'User'}
         </p>
-      </div>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="card-shadow rounded-lg bg-card p-4"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{stat.label}</span>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </div>
-            <p className={`text-2xl font-semibold tabular-nums ${stat.color}`}>{loading ? '—' : stat.value}</p>
-          </motion.div>
-        ))}
-      </div>
+      <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-4" variants={container} initial="hidden" animate="show">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+        ) : (
+          statCards.map((stat) => (
+            <motion.div
+              key={stat.label}
+              variants={item}
+              whileHover={{ scale: 1.02, y: -2 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="card-shadow rounded-lg bg-card p-4 cursor-default"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{stat.label}</span>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+              <motion.p
+                key={stat.value}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`text-2xl font-semibold tabular-nums ${stat.color}`}
+              >
+                {stat.value}
+              </motion.p>
+            </motion.div>
+          ))
+        )}
+      </motion.div>
 
       {/* Recent public complaints */}
       <div>
         <h2 className="text-display text-foreground mb-4">Recent Public Issues</h2>
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="card-shadow rounded-lg bg-card p-4 h-40 animate-pulse" />
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={container} initial="hidden" animate="show">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <motion.div key={i} variants={item}><CardSkeleton /></motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : complaints.length === 0 ? (
-          <div className="card-shadow rounded-lg bg-card p-8 text-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card-shadow rounded-lg bg-card p-8 text-center">
             <p className="text-muted-foreground text-body">No public issues yet.</p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" variants={container} initial="hidden" animate="show">
             {complaints.map(complaint => (
-              <ComplaintCard
-                key={complaint.id}
-                complaint={complaint}
-                onVote={handleVote}
-              />
+              <motion.div key={complaint.id} variants={item}>
+                <ComplaintCard complaint={complaint} onVote={handleVote} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
-    </div>
+    </PageWrapper>
   );
 };
 
