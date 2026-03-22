@@ -26,34 +26,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string): Promise<User | null> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
+
+    if (error) {
+      console.error('Failed to fetch profile:', error.message);
+      return null;
+    }
+
     return data;
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    const applySession = async (session: { user?: { id: string } } | null) => {
+      if (!session?.user) {
+        if (isMounted) setUser(null);
+        return;
+      }
+
+      const profile = await fetchProfile(session.user.id);
+      if (isMounted) setUser(profile);
+    };
+
+    const finishLoading = () => {
+      if (isMounted) setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        setUser(profile);
-      } else {
-        setUser(null);
+      try {
+        await applySession(session);
+      } finally {
+        finishLoading();
       }
-      setLoading(false);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        setUser(profile);
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      try {
+        if (error) {
+          console.error('Failed to get session:', error.message);
+          if (isMounted) setUser(null);
+          return;
+        }
+
+        await applySession(session);
+      } finally {
+        finishLoading();
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    const loadingWatchdog = window.setTimeout(() => {
+      finishLoading();
+    }, 5000);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(loadingWatchdog);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
