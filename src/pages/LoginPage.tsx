@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scene3DLogin } from '@/components/Scene3DLogin';
 import type { UserRole } from '@/types';
 
 type AuthMode = 'login' | 'register';
@@ -53,7 +52,7 @@ const LoginPage = () => {
         if (roleTab === 'faculty') {
           setSuccess('Registration submitted. Awaiting admin approval.');
         } else {
-          setSuccess('Account created! You can now sign in.');
+          setSuccess('Account created. Check your email to confirm.');
         }
       }
     } finally {
@@ -62,78 +61,49 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
-      {/* 3D animated background */}
-      <Scene3DLogin />
-
+    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="w-full max-w-md relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
       >
-        {/* Logo + heading */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <motion.div
-            className="inline-flex h-14 w-14 rounded-xl bg-primary items-center justify-center mb-4 shadow-lg"
-            whileHover={{ rotate: 15, scale: 1.1 }}
-            transition={{ type: 'spring', stiffness: 400 }}
-          >
-            <span className="text-primary-foreground text-xl font-bold">R</span>
-          </motion.div>
+        <div className="text-center mb-8">
+          <div className="inline-flex h-12 w-12 rounded-lg bg-primary items-center justify-center mb-4">
+            <span className="text-primary-foreground text-lg font-bold">R</span>
+          </div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">
             Complaint Management System
           </h1>
           <p className="text-body text-muted-foreground mt-1">
             Report and track issues efficiently
           </p>
-        </motion.div>
+        </div>
 
-        {/* Card */}
-        <motion.div
-          className="rounded-xl bg-card/90 backdrop-blur-lg p-6 shadow-2xl border border-border/50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
+        <div className="card-shadow rounded-lg bg-card p-6">
           {/* Role tabs */}
-          <div className="flex rounded-lg bg-muted/80 p-1 mb-6">
+          <div className="flex rounded-md bg-muted p-1 mb-6">
             {(['student', 'faculty', 'admin'] as RoleTab[]).map(tab => (
-              <motion.button
+              <button
                 key={tab}
                 onClick={() => { setRoleTab(tab); setError(''); setSuccess(''); }}
-                className={`flex-1 py-2.5 text-body rounded-md transition-all capitalize relative ${
+                className={`flex-1 py-2 text-body rounded-md transition-all capitalize ${
                   roleTab === tab
-                    ? 'text-foreground font-medium'
+                    ? 'bg-card card-shadow text-foreground font-medium'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
-                whileTap={{ scale: 0.97 }}
               >
-                {roleTab === tab && (
-                  <motion.div
-                    layoutId="login-tab"
-                    className="absolute inset-0 bg-card rounded-md shadow-sm"
-                    style={{ zIndex: -1 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
                 {tab}
-              </motion.button>
+              </button>
             ))}
           </div>
 
           <AnimatePresence mode="wait">
             <motion.form
               key={`${roleTab}-${mode}`}
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15 }}
               onSubmit={handleSubmit}
               className="space-y-4"
             >
@@ -147,7 +117,6 @@ const LoginPage = () => {
                       value={adminEmail}
                       onChange={e => setAdminEmail(e.target.value)}
                       placeholder="admin@example.com"
-                      className="bg-background/50"
                       required
                     />
                   </div>
@@ -159,7 +128,6 @@ const LoginPage = () => {
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="bg-background/50"
                       required
                     />
                   </div>
@@ -167,22 +135,16 @@ const LoginPage = () => {
               ) : (
                 <>
                   {mode === 'register' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2"
-                    >
+                    <div className="space-y-2">
                       <Label htmlFor="name" className="text-body">Full Name</Label>
                       <Input
                         id="name"
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="John Doe"
-                        className="bg-background/50"
                         required
                       />
-                    </motion.div>
+                    </div>
                   )}
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-body">College Email</Label>
@@ -191,8 +153,7 @@ const LoginPage = () => {
                       type="email"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      placeholder="24cy434@mgits.ac.in"
-                      className="bg-background/50"
+                      placeholder="you@college.edu"
                       required
                     />
                   </div>
@@ -204,7 +165,6 @@ const LoginPage = () => {
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="bg-background/50"
                       minLength={6}
                       required
                     />
@@ -213,36 +173,15 @@ const LoginPage = () => {
               )}
 
               {error && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2"
-                >
-                  {error}
-                </motion.p>
+                <p className="text-sm text-destructive bg-destructive/5 rounded-md px-3 py-2">{error}</p>
               )}
               {success && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-status-done bg-status-done/10 rounded-lg px-3 py-2"
-                >
-                  {success}
-                </motion.p>
+                <p className="text-sm text-status-done bg-muted rounded-md px-3 py-2">{success}</p>
               )}
 
-              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-                <Button type="submit" className="w-full h-11 text-sm font-medium" disabled={loading}>
-                  {loading ? (
-                    <motion.span
-                      animate={{ opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      Please wait...
-                    </motion.span>
-                  ) : roleTab === 'admin' ? 'Sign In' : mode === 'login' ? 'Sign In' : 'Create Account'}
-                </Button>
-              </motion.div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Please wait...' : roleTab === 'admin' ? 'Sign In' : mode === 'login' ? 'Sign In' : 'Create Account'}
+              </Button>
 
               {roleTab !== 'admin' && (
                 <p className="text-center text-body text-muted-foreground">
@@ -263,7 +202,7 @@ const LoginPage = () => {
               )}
             </motion.form>
           </AnimatePresence>
-        </motion.div>
+        </div>
       </motion.div>
     </div>
   );
