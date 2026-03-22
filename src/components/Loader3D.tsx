@@ -1,42 +1,54 @@
-import { useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion } from 'framer-motion';
 
-const SpinningRing = ({ radius, speed, color, thickness }: { radius: number; speed: number; color: string; thickness: number }) => {
-  const ref = useRef<THREE.Mesh>(null!);
+interface SpinningRingProps {
+  radius: number;
+  speed: number;
+  color: string;
+  thickness: number;
+}
+
+const SpinningRing = forwardRef<THREE.Mesh, SpinningRingProps>(({ radius, speed, color, thickness }, forwardedRef) => {
+  const meshRef = useRef<THREE.Mesh>(null!);
+
+  useImperativeHandle(forwardedRef, () => meshRef.current, []);
 
   useFrame((state) => {
-    ref.current.rotation.x = state.clock.elapsedTime * speed;
-    ref.current.rotation.y = state.clock.elapsedTime * speed * 0.7;
+    meshRef.current.rotation.x = state.clock.elapsedTime * speed;
+    meshRef.current.rotation.y = state.clock.elapsedTime * speed * 0.7;
   });
 
   return (
-    <mesh ref={ref}>
+    <mesh ref={meshRef}>
       <torusGeometry args={[radius, thickness, 16, 48]} />
       <meshStandardMaterial color={color} transparent opacity={0.6} />
     </mesh>
   );
-};
+});
 
-const PulsingCore = () => {
-  const ref = useRef<THREE.Mesh>(null!);
+SpinningRing.displayName = 'SpinningRing';
+
+const PulsingCore = forwardRef<THREE.Mesh>((_, forwardedRef) => {
+  const meshRef = useRef<THREE.Mesh>(null!);
+
+  useImperativeHandle(forwardedRef, () => meshRef.current, []);
 
   useFrame((state) => {
     const scale = 1 + Math.sin(state.clock.elapsedTime * 3) * 0.15;
-    ref.current.scale.set(scale, scale, scale);
+    meshRef.current.scale.set(scale, scale, scale);
   });
 
   return (
-    <Float speed={2} floatIntensity={0.5}>
-      <mesh ref={ref}>
-        <octahedronGeometry args={[0.3, 0]} />
-        <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={0.5} />
-      </mesh>
-    </Float>
+    <mesh ref={meshRef}>
+      <octahedronGeometry args={[0.3, 0]} />
+      <meshStandardMaterial color="#dc2626" emissive="#dc2626" emissiveIntensity={0.5} />
+    </mesh>
   );
-};
+});
+
+PulsingCore.displayName = 'PulsingCore';
 
 const LoaderScene = () => (
   <Canvas camera={{ position: [0, 0, 4], fov: 45 }} dpr={[1, 1.5]}>
