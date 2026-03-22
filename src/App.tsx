@@ -10,7 +10,7 @@ import { AnimatePresence } from "framer-motion";
 import { lazy, Suspense } from "react";
 
 // Lazy-load pages for better performance
-import LoginPage from "./pages/LoginPage";
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NewComplaint = lazy(() => import("./pages/NewComplaint"));
 const MyComplaints = lazy(() => import("./pages/MyComplaints"));
@@ -35,8 +35,10 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode;
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
+
+  if (loading) return <FullPageLoader3D />;
 
   return (
     <>
