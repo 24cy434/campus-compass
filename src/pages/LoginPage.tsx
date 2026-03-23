@@ -52,7 +52,7 @@ const LoginPage = () => {
         if (roleTab === 'faculty') {
           setSuccess('Registration submitted. Awaiting admin approval.');
         } else {
-          setSuccess('Account created. Check your email to confirm.');
+          setSuccess('Account created! You can now sign in.');
         }
       }
     } finally {

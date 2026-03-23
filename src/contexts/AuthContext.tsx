@@ -46,7 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Check initial session first
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
       if (session?.user) {
         const profile = await fetchProfile(session.user.id);
@@ -55,21 +56,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         }
       } else {
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     });
 
-    // Fallback timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (mounted) setLoading(false);
-    }, 5000);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      if (session?.user) {
+        // Use setTimeout to avoid deadlock with Supabase auth callbacks
+        setTimeout(async () => {
+          if (!mounted) return;
+          const profile = await fetchProfile(session.user.id);
+          if (mounted) {
+            setUser(profile);
+            setLoading(false);
+          }
+        }, 0);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -111,21 +121,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Try sign in first
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // If invalid credentials, try to create the admin account
       if (error.message.includes('Invalid login credentials')) {
+        // Account doesn't exist — create it (auto-confirm is on)
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { name: 'Admin', role: 'admin' } },
         });
         if (signUpError) {
-          // "User already registered" means password is wrong
           if (signUpError.message.includes('already registered')) {
             return { error: 'Invalid password for this admin account' };
           }
           return { error: signUpError.message };
         }
-        // Ensure profile exists
+        // With auto-confirm, signup creates a session automatically
         if (signUpData.user) {
           await supabase.from('profiles').upsert({
             id: signUpData.user.id,
@@ -135,9 +144,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             approval_status: 'approved',
           });
         }
-        // Login after signup
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-        if (loginError) return { error: loginError.message };
+        // If no session from signup, sign in explicitly
+        if (!signUpData.session) {
+          const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+          if (loginError) return { error: loginError.message };
+        }
       } else {
         return { error: error.message };
       }
